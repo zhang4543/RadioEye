@@ -26,6 +26,7 @@ namespace RadioEye
                 foreach (string item in KeyList)
                 {
                     ListViewItem lvi = new ListViewItem(item);
+                    lvi.Name = item;
                     lv_KeyList.Items.Add(lvi);
                 }
             }
@@ -73,7 +74,9 @@ namespace RadioEye
 
             foreach (string item in KeyListTmp)
             {
+                if (lv_KeyList.Items.ContainsKey(item)) continue;
                 ListViewItem lvi = new ListViewItem(item);
+                lvi.Name = item;
                 lv_KeyList.Items.Add(lvi);
             }
         }

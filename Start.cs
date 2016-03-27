@@ -17,6 +17,7 @@ namespace RadioEye
     public partial class Start : Form
     {
         StringBuilder szDevice;
+        string sPath = System.IO.Path.GetTempPath() + @"nfc\";
 
         public Start(ref StringBuilder szDeviceTmp)
         {
@@ -93,22 +94,43 @@ namespace RadioEye
 
         private bool Chk_Component(ref string szRet)
         {
+           
+            FileStream fs;
+            byte[] buffer;
+            
+
+
+            if (!Directory.Exists(sPath))
+            {
+                Directory.CreateDirectory(sPath);
+            }
+            if (!Directory.Exists(AppDomain.CurrentDomain.BaseDirectory+"key"))
+            {
+                Directory.CreateDirectory(AppDomain.CurrentDomain.BaseDirectory+"key");
+            }
             string[] szFileList = new string[]
             {
-                "nfc/libnfc.dll",
-                "nfc/libusb0.dll",
-                "nfc/nfc-list.exe",
-                "nfc/nfc-mfsetuid.exe",
-                "nfc/nfc-mfclassic.exe",
-                "nfc/mfoc.exe",
+                "libnfc.dll",
+                "libusb0.dll",
+                "nfc-list.exe",
+                "nfc-mfsetuid.exe",
+                "nfc-mfclassic.exe",
+                "mfoc.exe",
             }; 
 
             foreach (string szFileItem in szFileList)
             {
-                if (!File.Exists(szFileItem))
+                if (!File.Exists(sPath +szFileItem))
                 {
-                    szRet = "Error! " + szFileItem + " does not exist";
-                    return false;
+                       fs = new FileStream(sPath  + szFileItem, FileMode.CreateNew, FileAccess.Write);
+                    buffer =(byte[]) Properties.Resources.ResourceManager.GetObject(szFileItem.Substring(0, szFileItem.IndexOf('.')).Replace("-","_"));//Properties.Resources.libusb0;
+                    fs.Write(buffer, 0, buffer.Length);
+                    fs.Close();
+                    if (!File.Exists(sPath + szFileItem))
+                    {
+                        szRet = "Error! " + szFileItem + " does not exist";
+                        return false;
+                    }
                 }
             }
             szRet = "OK!";
@@ -118,7 +140,7 @@ namespace RadioEye
         private bool Chk_Device(ref string szRet)
         {
             ProcessLayer pl = new ProcessLayer();
-            bool bSuccess = pl.SyncStart("nfc/nfc-list.exe", null);
+            bool bSuccess = pl.SyncStart(sPath+"nfc-list.exe", null);
 
             if (!bSuccess)
             {

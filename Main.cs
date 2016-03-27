@@ -16,14 +16,15 @@ namespace RadioEye
     public partial class Main : Form
     {
         private delegate void InvokeInsertItemDelegate(byte[] btBuf);
-        
+
         private ProcessLayer pl;
         private string[] KeyList;
         private string Uid;
+        private string sPath = System.IO.Path.GetTempPath() + @"nfc\";
 
         public Main(string szDevice)
         {
-            CheckForIllegalCrossThreadCalls = false; 
+            CheckForIllegalCrossThreadCalls = false;
             InitializeComponent();
             Device.Text = "Device Info: " + szDevice;
             pl = new ProcessLayer(ProcStatus, txt_Log);
@@ -31,23 +32,23 @@ namespace RadioEye
 
         private void chk_Mode_CheckedChanged(object sender, EventArgs e)
         {
-           if (((CheckBox)sender).Checked)
-           {
+            if (((CheckBox)sender).Checked)
+            {
                 txt_Id.ReadOnly = false;
                 btn_ReadId.Enabled = false;
                 btn_WriteId.Enabled = true;
-           }
-           else
-           {
+            }
+            else
+            {
                 txt_Id.ReadOnly = true;
                 btn_ReadId.Enabled = true;
                 btn_WriteId.Enabled = false;
-           }
+            }
         }
 
         private void btn_ReadId_Click(object sender, EventArgs e)
         {
-            if (pl.AsyncStart("nfc/nfc-list.exe", "", GetUid) == false)
+            if (pl.AsyncStart(sPath + "nfc-list.exe", "", GetUid) == false)
             {
                 MessageBox.Show("已存在工作线程");
                 return;
@@ -88,7 +89,7 @@ namespace RadioEye
                     }
                     else
                     {
-                        if (pl.AsyncStart("nfc/mfoc.exe", "-P " + ud_Probe.Value.ToString() + " -T " + ud_distance.Value.ToString() + " -O key/" + Uid + ".dump", GetData) == false)
+                        if (pl.AsyncStart(sPath + "mfoc.exe", "-P " + ud_Probe.Value.ToString() + " -T " + ud_distance.Value.ToString() + " -O key/" + Uid + ".dump", GetData) == false)
                         {
                             MessageBox.Show("已存在工作线程");
                             return;
@@ -96,7 +97,7 @@ namespace RadioEye
                     }
                     return;
                 }
-                
+
                 List<string> KeyListTmp = new List<string>();
                 for (int i = 0; i < 64; i++)
                 {
@@ -108,7 +109,7 @@ namespace RadioEye
                 }
 
                 KeyListTmp = KeyListTmp.Distinct().ToList();
-                
+
                 StringBuilder sbKeyArgv = new StringBuilder();
 
                 foreach (string item in KeyListTmp)
@@ -116,7 +117,7 @@ namespace RadioEye
                     sbKeyArgv.Append(" -k ");
                     sbKeyArgv.Append(item);
                 }
-                if (pl.AsyncStart("nfc/mfoc.exe", sbKeyArgv.ToString() + " -P " + ud_Probe.Value.ToString() + " -T " + ud_distance.Value.ToString() + " -O key/tmp.dump", GetData) == false)
+                if (pl.AsyncStart(sPath + "mfoc.exe", sbKeyArgv.ToString() + " -P " + ud_Probe.Value.ToString() + " -T " + ud_distance.Value.ToString() + " -O key/tmp.dump", GetData) == false)
                 {
                     MessageBox.Show("已存在工作线程");
                     return;
@@ -124,7 +125,7 @@ namespace RadioEye
             }
             else
             {
-                if (pl.AsyncStart("nfc/mfoc.exe", "-P " + ud_Probe.Value.ToString() + " -T " + ud_distance.Value.ToString() + " -O key/" + Uid + ".dump", GetData) == false)
+                if (pl.AsyncStart(sPath + "mfoc.exe", "-P " + ud_Probe.Value.ToString() + " -T " + ud_distance.Value.ToString() + " -O key/" + Uid + ".dump", GetData) == false)
                 {
                     MessageBox.Show("已存在工作线程");
                     return;
@@ -147,8 +148,15 @@ namespace RadioEye
                 return;
             }
             GetUid(sExecResultTmp, ExitCode);
-
-            byte[] btBuf = FileLayer.Read("key/" + Uid + ".dump");
+            byte[] btBuf;
+            if (!FileLayer.Exists("key/" + Uid + ".dump"))
+            {
+                btBuf = FileLayer.Read("key/tmp.dump");
+            }
+            else
+            {
+                btBuf = FileLayer.Read("key/" + Uid + ".dump");
+            }
             if (btBuf == null)
             {
                 if (pl.m_RetErrorMsg != null && pl.m_RetErrorMsg.Length != 0)
@@ -161,10 +169,14 @@ namespace RadioEye
                 }
                 return;
             }
+            else
+            {
+                FileLayer.Write("key/" + Uid + ".dump", btBuf);
+            }
 
             InvokeInsertItemDelegate iiid = new InvokeInsertItemDelegate(InvokeInsertItem);
-            this.BeginInvoke(iiid, new object[] {btBuf});
-            
+            this.BeginInvoke(iiid, new object[] { btBuf });
+
             lb_source.Text = "Card Reader";
         }
 
@@ -172,7 +184,7 @@ namespace RadioEye
         {
             dgv_DumpData.Rows.Clear();
             string szBuf = HexStringByteArrayConverter.BytesToHexString(btBuf);
-            
+
             for (int i = 0; i < 64; i++)
             {
                 dgv_DumpData.Rows.Add();
@@ -183,7 +195,7 @@ namespace RadioEye
                 dgv_DumpData.Rows[i].Cells[4].Value = szBuf.Substring(128 * i + 96, 12);
                 dgv_DumpData.Rows[i].Cells[5].Value = szBuf.Substring(128 * i + 116, 12);
                 dgv_DumpData.Rows[i].Cells[6].Value = szBuf.Substring(128 * i + 108, 8);
-            }        
+            }
         }
 
         private void GetDataFromFile(string sFilePath)
@@ -197,23 +209,25 @@ namespace RadioEye
             }
 
             InvokeInsertItem(btBuf);
-            
+
             lb_source.Text = sFilePath;
         }
 
-    
+
         private void btn_Crack_Click(object sender, EventArgs e)
         {
-            if (chk_Key.Checked)
+            if (chk_Key.Checked && KeyList != null)
             {
                 StringBuilder sbKeyArgv = new StringBuilder();
+
 
                 foreach (string item in KeyList)
                 {
                     sbKeyArgv.Append(" -k ");
                     sbKeyArgv.Append(item);
                 }
-                if (pl.AsyncStart("nfc/mfoc.exe", sbKeyArgv.ToString() + " -P " + ud_Probe.Value.ToString() + " -T " + ud_distance.Value.ToString() + " -O key/tmp.dump", GetData) == false)
+
+                if (pl.AsyncStart(sPath + "mfoc.exe", sbKeyArgv.ToString() + " -P " + ud_Probe.Value.ToString() + " -T " + ud_distance.Value.ToString() + " -O key/tmp.dump", GetData) == false)
                 {
                     MessageBox.Show("已存在工作线程");
                     return;
@@ -221,8 +235,8 @@ namespace RadioEye
             }
             else
             {
-                if (pl.AsyncStart("nfc/nfc-list.exe", "", GetUidToCrack, false) == false)
-                //if (pbl.Start("nfc/mfoc.exe", "-P " + ud_Probe.Value.ToString() + " -T " + ud_distance.Value.ToString() + " -O key/tmp.dump", GetData) == false)
+                if (pl.AsyncStart(sPath + "nfc-list.exe", "", GetUidToCrack, false) == false)
+                //if (pbl.Start(path + "nfc\\mfoc.exe", "-P " + ud_Probe.Value.ToString() + " -T " + ud_distance.Value.ToString() + " -O key/tmp.dump", GetData) == false)
                 {
                     MessageBox.Show("已存在工作线程");
                     return;
@@ -238,7 +252,7 @@ namespace RadioEye
                 return;
             }
 
-            if (pl.AsyncStart("nfc/nfc-mfsetuid.exe", "-f " + txt_Id.Text) == false)
+            if (pl.AsyncStart(sPath + "nfc-mfsetuid.exe", "-f " + txt_Id.Text) == false)
             {
                 MessageBox.Show("已存在工作线程");
             }
@@ -312,7 +326,7 @@ namespace RadioEye
             }
 
             FileLayer.Write(saveFileDialog.FileName, GetGridViewData());
-            MessageBox.Show("保存到文件 [" + saveFileDialog.FileName.Substring(saveFileDialog.FileName.LastIndexOf("\\") + 1) + "] 成功！");
+            MessageBox.Show("保存到文件 [" + saveFileDialog.FileName.Substring(saveFileDialog.FileName.LastIndexOf("") + 1) + "] 成功！");
         }
 
         private void btn_DownloadNet_Click(object sender, EventArgs e)
@@ -350,7 +364,7 @@ namespace RadioEye
             {
                 return;
             }
-            
+
             Upload UploadDlg = new Upload(dgv_DumpData.Rows[0].Cells[1].Value.ToString().Substring(0, 8), Convert.ToBase64String(GetGridViewData()));
 
             UploadDlg.ShowDialog();
@@ -363,10 +377,12 @@ namespace RadioEye
                 return;
             }
 
+            
+
             FileLayer.Write("key/tmp.dump", GetGridViewData());
             StringBuilder szArgv = new StringBuilder();
             szArgv.Append("w ");
-            
+
             if (rb_KeyA.Checked)
             {
                 szArgv.Append("a ");
@@ -378,7 +394,7 @@ namespace RadioEye
 
             szArgv.Append(" key/tmp.dump key/tmp.dump");
 
-            if (pl.AsyncStart("nfc/nfc-mfclassic.exe", szArgv.ToString()) == false)
+            if (pl.AsyncStart(sPath + "nfc-mfclassic.exe", szArgv.ToString()) == false)
             {
                 MessageBox.Show("已存在工作线程");
                 return;
@@ -407,7 +423,7 @@ namespace RadioEye
 
             szArgv.Append(" key/tmp.dump key/tmp.dump");
 
-            if (pl.AsyncStart("nfc/nfc-mfclassic.exe", szArgv.ToString()) == false)
+            if (pl.AsyncStart(sPath + "nfc-mfclassic.exe", szArgv.ToString()) == false)
             {
                 MessageBox.Show("已存在工作线程");
                 return;

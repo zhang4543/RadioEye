@@ -38,8 +38,11 @@
     <ApplicationIcon>logo.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>.\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Resources\Newtonsoft.Json.dll</HintPath>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -149,6 +152,26 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="logo.ico" />
+    <Content Include="Resources\libnfc.dll" />
+    <Content Include="Resources\libusb0.dll" />
+    <Content Include="Resources\mfoc.exe" />
+    <None Include="Resources\Newtonsoft.Json.dll" />
+    <Content Include="Resources\nfc-anticol.exe" />
+    <Content Include="Resources\nfc-dep-initiator.exe" />
+    <Content Include="Resources\nfc-dep-target.exe" />
+    <Content Include="Resources\nfc-emulate-forum-tag2.exe" />
+    <Content Include="Resources\nfc-emulate-forum-tag4.exe" />
+    <Content Include="Resources\nfc-emulate-tag.exe" />
+    <Content Include="Resources\nfc-emulate-uid.exe" />
+    <Content Include="Resources\nfc-list.exe" />
+    <Content Include="Resources\nfc-mfclassic.exe" />
+    <Content Include="Resources\nfc-mfsetuid.exe" />
+    <Content Include="Resources\nfc-mfultralight.exe" />
+    <Content Include="Resources\nfc-poll.exe" />
+    <Content Include="Resources\nfc-probe.exe" />
+    <Content Include="Resources\nfc-read-forum-tag3.exe" />
+    <Content Include="Resources\nfc-relay-picc.exe" />
+    <Content Include="Resources\nfc-relay.exe" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
