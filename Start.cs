@@ -56,7 +56,7 @@ namespace RadioEye
                     break;
                 case 2:
                     lab_Tip.Text = "Checking RFID Device...";
-                     lab_Ret.Text = "";
+                    lab_Ret.Text = "";
                     break;
                 case 3:
                     timer.Stop();
@@ -94,36 +94,49 @@ namespace RadioEye
 
         private bool Chk_Component(ref string szRet)
         {
-           
+
             FileStream fs;
             byte[] buffer;
-            
+
 
 
             if (!Directory.Exists(sPath))
             {
                 Directory.CreateDirectory(sPath);
             }
-            if (!Directory.Exists(AppDomain.CurrentDomain.BaseDirectory+"key"))
+            if (!Directory.Exists(AppDomain.CurrentDomain.BaseDirectory + "key"))
             {
-                Directory.CreateDirectory(AppDomain.CurrentDomain.BaseDirectory+"key");
+                Directory.CreateDirectory(AppDomain.CurrentDomain.BaseDirectory + "key");
             }
             string[] szFileList = new string[]
             {
                 "libnfc.dll",
                 "libusb0.dll",
-                "nfc-list.exe",
-                "nfc-mfsetuid.exe",
-                "nfc-mfclassic.exe",
                 "mfoc.exe",
-            }; 
+                "nfc-anticol.exe",
+                "nfc-dep-initiator.exe",
+                "nfc-dep-target.exe",
+                "nfc-emulate-forum-tag2.exe",
+                "nfc-emulate-forum-tag4.exe",
+                "nfc-emulate-tag.exe",
+                "nfc-emulate-uid.exe",
+                "nfc-list.exe",
+                "nfc-mfclassic.exe",
+                "nfc-mfsetuid.exe",
+                "nfc-mfultralight.exe",
+                "nfc-poll.exe",
+                "nfc-probe.exe",
+                "nfc-read-forum-tag3.exe",
+                "nfc-relay.exe",
+                "nfc-relay-picc.exe",
+            };
 
             foreach (string szFileItem in szFileList)
             {
-                if (!File.Exists(sPath +szFileItem))
+                if (!File.Exists(sPath + szFileItem))
                 {
-                       fs = new FileStream(sPath  + szFileItem, FileMode.CreateNew, FileAccess.Write);
-                    buffer =(byte[]) Properties.Resources.ResourceManager.GetObject(szFileItem.Substring(0, szFileItem.IndexOf('.')).Replace("-","_"));//Properties.Resources.libusb0;
+                    fs = new FileStream(sPath + szFileItem, FileMode.CreateNew, FileAccess.Write);
+                    buffer = (byte[])Properties.Resources.ResourceManager.GetObject(szFileItem.Substring(0, szFileItem.IndexOf('.')).Replace("-", "_"));//Properties.Resources.libusb0;
                     fs.Write(buffer, 0, buffer.Length);
                     fs.Close();
                     if (!File.Exists(sPath + szFileItem))
@@ -140,7 +153,7 @@ namespace RadioEye
         private bool Chk_Device(ref string szRet)
         {
             ProcessLayer pl = new ProcessLayer();
-            bool bSuccess = pl.SyncStart(sPath+"nfc-list.exe", null);
+            bool bSuccess = pl.SyncStart(sPath + "nfc-list.exe", null);
 
             if (!bSuccess)
             {

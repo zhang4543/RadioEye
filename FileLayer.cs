@@ -68,5 +68,12 @@ namespace CSFileLayer
         {
             return File.Exists(szPath);
         }
+
+
+        public static DateTime GetLastWriteTime(string szPath)
+        {
+            FileInfo fi = new FileInfo(szPath);
+            return fi.LastWriteTime;
+        }
     }
 }

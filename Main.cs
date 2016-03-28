@@ -149,13 +149,22 @@ namespace RadioEye
             }
             GetUid(sExecResultTmp, ExitCode);
             byte[] btBuf;
-            if (!FileLayer.Exists("key/" + Uid + ".dump"))
+            if (FileLayer.Exists("key/" + Uid + ".dump"))
             {
-                btBuf = FileLayer.Read("key/tmp.dump");
+                if (FileLayer.GetLastWriteTime("key/" + Uid + ".dump") >= FileLayer.GetLastWriteTime("key/tmp.dump"))
+                {
+                    btBuf = FileLayer.Read("key/" + Uid + ".dump");
+                }
+                else
+                {
+                    btBuf = FileLayer.Read("key/tmp.dump");
+                    FileLayer.Write("key/" + Uid + ".dump", btBuf);
+                }
             }
             else
             {
-                btBuf = FileLayer.Read("key/" + Uid + ".dump");
+                btBuf = FileLayer.Read("key/tmp.dump");
+                FileLayer.Write("key/" + Uid + ".dump", btBuf);
             }
             if (btBuf == null)
             {
@@ -169,10 +178,7 @@ namespace RadioEye
                 }
                 return;
             }
-            else
-            {
-                FileLayer.Write("key/" + Uid + ".dump", btBuf);
-            }
+            
 
             InvokeInsertItemDelegate iiid = new InvokeInsertItemDelegate(InvokeInsertItem);
             this.BeginInvoke(iiid, new object[] { btBuf });
@@ -392,13 +398,31 @@ namespace RadioEye
                 szArgv.Append("b ");
             }
 
-            szArgv.Append(" key/tmp.dump key/tmp.dump");
+            szArgv.Append(" key/tmp.dump key/"+Uid+".dump");
 
-            if (pl.AsyncStart(sPath + "nfc-mfclassic.exe", szArgv.ToString()) == false)
+            if (pl.AsyncStart(sPath + "nfc-mfclassic.exe", szArgv.ToString(), SetData) == false)
             {
                 MessageBox.Show("已存在工作线程");
                 return;
             }
+        }
+
+        private void SetData(string sExecResultTmp, int ExitCode)
+        {
+            if (ExitCode != 0)
+            {
+                if (pl.m_RetErrorMsg != null && pl.m_RetErrorMsg.Length != 0)
+                {
+                    //MessageBox.Show(pl.m_RetErrorMsg);
+                }
+                else
+                {
+                   // MessageBox.Show("faild");
+                }
+                return;
+            }
+            FileLayer.Write("key/"+Uid+".dump", GetGridViewData());
+
         }
 
         private void btn_WriteU_Click(object sender, EventArgs e)
